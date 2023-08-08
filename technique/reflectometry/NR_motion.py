@@ -1,6 +1,7 @@
 import sys
 from collections import OrderedDict
 from contextlib2 import contextmanager
+from termcolor import colored
 
 from future.moves import itertools
 from math import tan, radians, sin
@@ -12,7 +13,6 @@ try:
     from genie_python import genie as g
 except ImportError:
     from mocks import g
-
 
 # import general.utilities.io
 from .sample import Sample
@@ -59,9 +59,9 @@ class _Movement(object):
         """
         special_axes = ['HEIGHT2']  # This could link to an instrument specific function?
         if axis.upper() in special_axes and not constants.has_height2:
-            print("ERROR: Height 2 off set is being ignored")
+            print(colored("ERROR: Height 2 off set is being ignored", "red"))
         else:
-            print("{} set to: {}".format(axis, value))
+            print(colored("{} set to: {}".format(axis, value), "blue"))
             if not self.dry_run:
                 try:
                     g.cset(axis, value)
@@ -113,7 +113,7 @@ class _Movement(object):
         :param add_current_gaps: current gaps
         """
         new_title = "{} {}".format(title, subtitle)
-        
+
         if theta is not None:
             new_title = "{} th={:.4g}".format(new_title, theta)
         else:
@@ -123,15 +123,15 @@ class _Movement(object):
 
         if add_current_gaps:
             # TODO sort out the gaps here. Is this changed format ok?
-            #gaps = itertools.chain(self.get_gaps(vertical=True).values(), self.get_gaps(vertical=False).values())
-            #new_title = "{} VGs ({:.3g} {:.3g} {:.3g} {:.3g}) HGs ({:.3g} {:.3g} {:.3g} {:.3g})".format(new_title, *gaps)
-            vgaps = self.get_gaps(vertical=True,slitrange=['1', '1A', '2', '3'])
+            # gaps = itertools.chain(self.get_gaps(vertical=True).values(), self.get_gaps(vertical=False).values())
+            # new_title = "{} VGs ({:.3g} {:.3g} {:.3g} {:.3g}) HGs ({:.3g} {:.3g} {:.3g} {:.3g})".format(new_title, *gaps)
+            vgaps = self.get_gaps(vertical=True, slitrange=['1', '1A', '2', '3'])
             hgaps = self.get_gaps(vertical=False)
             for i, k in vgaps.items():
                 new_title = "{} {}={:.4g}".format(new_title, i, k)
             for i, k in hgaps.items():
                 new_title = "{} {}={:.3g}".format(new_title, i, k)
-            #new_title = "{} ({}) ({})".format(new_title, vgaps, hgaps)
+            # new_title = "{} ({}) ({})".format(new_title, vgaps, hgaps)
 
         if self.dry_run:
             g.change_title(new_title)
@@ -154,7 +154,7 @@ class _Movement(object):
         factor = theta / constants.max_theta
         s3 = constants.s3max * factor
         calc_dict.update({'S3VG': s3})
-        
+
         if vgaps is None:
             vgaps = {}
         ## Look at inputs. Might not need to deal with None...?
@@ -175,7 +175,7 @@ class _Movement(object):
         Raises error if axis block does not exist.
         """
         # TODO:  And for less than 0 as warning?
-        print("Setting axes: {}".format(axes_to_set))
+        print(colored("Setting axes: {}".format(axes_to_set), "green"))
         for gap in axes_to_set.keys():
             if not self.dry_run:
                 try:
@@ -359,7 +359,7 @@ class _Movement(object):
             count_frames: number of frames to count for; None=count in a different way
         """
         stop = False
-        finish_condition=None
+        finish_condition = None
         if count_uamps is not None:
             finish_condition = count_uamps
             counter = g.get_uamps()
@@ -371,7 +371,7 @@ class _Movement(object):
             counter = g.get_frames()
         else:
             print("Counts in uamps, seconds or frames must be defined.")
-    
+
         if finish_condition is not None and counter >= finish_condition:
             stop = True
         return stop
@@ -406,7 +406,7 @@ class _Movement(object):
             if c_min < c_max:
                 g.begin()
                 stop_test = self._check_if_done(count_uamps, count_seconds, count_frames)
-                #print(current_counts)
+                # print(current_counts)
                 while stop_test is False:
                     g.cset(c_block, c_min)
                     g.waitfor_block(c_block, c_min, maxwait=40)
@@ -424,11 +424,10 @@ class _Movement(object):
         else:
             print("Run with oscillating {} with gap of {} over a total width of {}.".format(slit_block, slit_gap,
                                                                                             slit_extent))
-                                                                                            
 
     def count_osc_slit_old(self, slit_block: str, slit_gap: float = None, slit_extent: float = None,
-                       count_uamps: float = None,
-                       count_seconds: float = None, count_frames: float = None):
+                           count_uamps: float = None,
+                           count_seconds: float = None, count_frames: float = None):
         """
         Starts and ends a measurement with a block oscillating during the measurement. Written as for slit but could be
         any block with minor adjustment. If the gap is not smaller than the extent of the oscillation then it runs a
@@ -552,7 +551,7 @@ class _Movement(object):
         self.dry_run_warning()
         constants = get_instrument_constants()
         self.change_to_soft_period_count(count=periods)
-        g.cset("MONITOR","IN")
+        g.cset("MONITOR", "IN")
         mode_out = self.change_to_mode_if_not_none(mode)
         print("Mode {}".format(mode_out))
         return constants, mode_out
@@ -579,7 +578,7 @@ class _Movement(object):
             self.set_axis("PSI", sample.psi_offset, constants=inst_constants)
             self.set_axis("PHI", sample.phi_offset + angle, constants=inst_constants)
         if inst_constants.has_height2:
-            if angle == 0 and trans_offset > 10:  #i.e. if transmission
+            if angle == 0 and trans_offset > 10:  # i.e. if transmission
                 self.set_axis("HEIGHT2", sample.height2_offset - trans_offset, constants=inst_constants)
                 self.set_axis("HEIGHT", sample.height_offset, constants=inst_constants)
             else:
@@ -600,8 +599,8 @@ class _Movement(object):
             smblock: axis for mirror, can be a list for multiple mirrors
             mode: flag for liquid mode where smangle is determined from angle instead
         """
-        protect_modes=["LIQUID", "OIL-WATER"]
-        #if mode.upper() == "LIQUID" and angle != 0.0:
+        protect_modes = ["LIQUID", "OIL-WATER"]
+        # if mode.upper() == "LIQUID" and angle != 0.0:
         if mode.upper() in protect_modes and angle != 0.0:
             # In liquid the sample is tilted by the incoming beam angle so that it is level, this is accounted for by
             # adjusting the super mirror
@@ -686,7 +685,8 @@ class _Movement(object):
         if not self.dry_run:
             g.resume()
 
-    def auto_height(self, laser_offset_block: str, fine_height_block: str, target: float = 0.0, continue_if_nan: bool = False,
+    def auto_height(self, laser_offset_block: str, fine_height_block: str, target: float = 0.0,
+                    continue_if_nan: bool = False,
                     dry_run: bool = False):
         """
         Moves the sample fine height axis so that it is centred on the beam, based on the readout of a laser height gun.
@@ -708,7 +708,8 @@ class _Movement(object):
             Moves HEIGHT2 by (target - b.KEYENCE) and does not interrupt script execution if an invalid value is read.
         """
         try:
-            target_height, current_height = self._calculate_target_auto_height(laser_offset_block, fine_height_block, target)
+            target_height, current_height = self._calculate_target_auto_height(laser_offset_block, fine_height_block,
+                                                                               target)
             if not dry_run:
                 g.cset(fine_height_block, target_height)
                 self._auto_height_check_alarms(fine_height_block)
@@ -717,8 +718,7 @@ class _Movement(object):
             prompt_user = not (continue_if_nan or dry_run)
             general.utilities.io.alert_on_error("ERROR: cannot set auto height (invalid block value): {}".format(e),
                                                 prompt_user)
-    
-    
+
     def _auto_height_check_alarms(self, fine_height_block):
         """
         Checks whether a given block for the fine height axis is in alarm after a move and sends an alert if not.
@@ -730,8 +730,7 @@ class _Movement(object):
         if any(fine_height_block in alarm_list for alarm_list in alarm_lists):
             general.utilities.io.alert_on_error(
                 "ERROR: cannot set auto height (target outside of range for fine height axis?)", True)
-    
-    
+
     def _calculate_target_auto_height(self, laser_offset_block, fine_height_block, target):
         if laser_offset_block is None:
             raise TypeError("No block given for laser offset.")
@@ -739,10 +738,10 @@ class _Movement(object):
             raise TypeError("No block given for fine height.")
         current_laser_offset = g.cget(laser_offset_block)["value"]
         difference = target - current_laser_offset
-    
+
         current_height = g.cget(fine_height_block)["value"]
         target_height = current_height + difference
-    
+
         print("Target for fine height axis: {} (current {})".format(target_height, current_height))
         return target_height, current_height
 
@@ -816,8 +815,7 @@ class _Movement_copy(object):
             gaps[gap_pv.lower()] = self._get_block_value(gap_pv)
 
         return gaps
-    
-    
+
     # Horizontal gaps and height reset by with reset_gaps_and_sample_height
     # Added extra part for centres too.
     @contextmanager
@@ -1076,7 +1074,6 @@ class _Movement_copy(object):
                 g.waitfor_frames(final_frame)
                 g.end()
 
-
     def count_osc_slit(self, slit_block: str, slit_gap: float = None, slit_extent: float = None,
                        count_uamps: float = None,
                        count_seconds: float = None, count_frames: float = None):
@@ -1320,7 +1317,6 @@ class _Movement_copy(object):
         print("For a footprint of {} and resolution of {} at an angle {}:".format(theta, footprint, resolution))
         print(calc_dict)
 
-
     def slit_check_new(sample=None, theta: float = 0.7, footprint: float = None, resolution: float = None):
         """
         Check the slits values with option based on sample. If footprint and resolution are given this will supersede the
@@ -1355,8 +1351,8 @@ class _Movement_copy(object):
         except:
             print("Error: you must define either a existing sample for the calculation, or a footprint AND resolution.")
 
-
-    def auto_height(self, laser_offset_block: str, fine_height_block: str, target: float = 0.0, continue_if_nan: bool = False,
+    def auto_height(self, laser_offset_block: str, fine_height_block: str, target: float = 0.0,
+                    continue_if_nan: bool = False,
                     dry_run: bool = False):
         """
         Moves the sample fine height axis so that it is centred on the beam, based on the readout of a laser height gun.
@@ -1378,7 +1374,8 @@ class _Movement_copy(object):
             Moves HEIGHT2 by (target - b.KEYENCE) and does not interrupt script execution if an invalid value is read.
         """
         try:
-            target_height, current_height = self._calculate_target_auto_height(laser_offset_block, fine_height_block, target)
+            target_height, current_height = self._calculate_target_auto_height(laser_offset_block, fine_height_block,
+                                                                               target)
             if not dry_run:
                 g.cset(fine_height_block, target_height)
                 _auto_height_check_alarms(fine_height_block)
@@ -1387,8 +1384,7 @@ class _Movement_copy(object):
             prompt_user = not (continue_if_nan or dry_run)
             general.utilities.io.alert_on_error("ERROR: cannot set auto height (invalid block value): {}".format(e),
                                                 prompt_user)
-    
-    
+
     def _auto_height_check_alarms(fine_height_block):
         """
         Checks whether a given block for the fine height axis is in alarm after a move and sends an alert if not.
@@ -1400,8 +1396,7 @@ class _Movement_copy(object):
         if any(fine_height_block in alarm_list for alarm_list in alarm_lists):
             general.utilities.io.alert_on_error(
                 "ERROR: cannot set auto height (target outside of range for fine height axis?)", True)
-    
-    
+
     def _calculate_target_auto_height(self, laser_offset_block, fine_height_block, target):
         if laser_offset_block is None:
             raise TypeError("No block given for laser offset.")
@@ -1409,9 +1404,9 @@ class _Movement_copy(object):
             raise TypeError("No block given for fine height.")
         current_laser_offset = g.cget(laser_offset_block)["value"]
         difference = target - current_laser_offset
-    
+
         current_height = g.cget(fine_height_block)["value"]
         target_height = current_height + difference
-    
+
         print("Target for fine height axis: {} (current {})".format(target_height, current_height))
         return target_height, current_height

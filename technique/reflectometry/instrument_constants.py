@@ -69,7 +69,7 @@ def get_instrument_constants():
             incoming_beam_angle=natural_angle,
             has_height2=has_height2)
     except Exception as e:
-        raise ValueError("No instrument value pvs to calculated requested result: {}".format(e))
+        raise ValueError("No instrument value pvs to calculate requested result: {}".format(e))
 
 
 def get_reflectometry_value(value_name):
