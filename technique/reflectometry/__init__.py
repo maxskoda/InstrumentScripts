@@ -4,8 +4,8 @@
 # from .base_New_v2 import transmission_new_edit, run_angle_new_edit, run_angle_SM_new_edit, transmission_new_SM_edit
 # from .script_actions import *
 #from .contrast_change import contrast_change, inject
-from .sample import SampleGenerator, Sample
-from .script_actions import RunActions, SEActions, DryRun, slit_check
+from sample import SampleGenerator, Sample
+from script_actions import RunActions, SEActions, DryRun, slit_check
 
 run_angle = RunActions.run_angle
 run_angle_SM = RunActions.run_angle_SM

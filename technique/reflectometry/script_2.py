@@ -102,7 +102,15 @@ def runscript(dry_run=False):
 
     go_to_pressure(28, speed=30)
 
-    print("\n=== Total time: ", str(int(DryRun.run_time / 60)) + "h " + str(int(DryRun.run_time % 60)) + "min ===")
+    if dry_run:
+        print("\n=== Total time: ", str(int(DryRun.run_time / 60)) + "h " + str(int(DryRun.run_time % 60)) + "min ===")
+        return DryRun.run_time
 
 
-runscript(dry_run=True)
+runtime = runscript(dry_run=True)
+
+ans = input("Script will run for " +
+            str(int(DryRun.run_time / 60)) + "h " + str(int(DryRun.run_time % 60)) + "min ===\nContinue ([y]/n)?")
+
+if ans == 'y' or ans == "":
+    runscript()

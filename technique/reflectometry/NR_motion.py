@@ -15,8 +15,8 @@ except ImportError:
     from mocks import g
 
 # import general.utilities.io
-from .sample import Sample
-from .instrument_constants import get_instrument_constants
+from sample import Sample
+from instrument_constants import get_instrument_constants
 
 
 class _Movement(object):
