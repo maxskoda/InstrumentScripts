@@ -7,7 +7,7 @@ from sample import SampleGenerator
 # from contrast_change import *
 from technique.reflectometry import *
 
-from technique.reflectometry import SampleGenerator, contrast_change, inject, go_to_pressure
+# from technique.reflectometry import SampleGenerator, contrast_change, inject, go_to_pressure
 
 import sys
 import os

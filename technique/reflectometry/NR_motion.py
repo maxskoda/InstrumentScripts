@@ -57,7 +57,7 @@ class _Movement(object):
             value: value to set axis to
             constants: constants for the instrument to check height behaviour
         """
-        special_axes = ['HEIGHT2']  # This could link to an instrument specific function?
+        special_axes = ['HEIGHT2']  # TODO: This could link to an instrument specific function?
         if axis.upper() in special_axes and not constants.has_height2:
             print(colored("ERROR: Height 2 off set is being ignored", "red"))
         else:

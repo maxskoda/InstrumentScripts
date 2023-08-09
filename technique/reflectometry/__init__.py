@@ -16,5 +16,6 @@ inject = SEActions.inject
 go_to_pressure = SEActions.go_to_pressure
 go_to_area = SEActions.go_to_area
 
-__all__ = ['RunActions', 'SEActions', 'DryRun', 'run_angle', 'run_angle_SM', 'slit_check', 'transmission', 'transmission_SM', 'contrast_change', 'inject']
+__all__ = ['RunActions', 'SEActions', 'DryRun', 'run_angle', 'run_angle_SM', 'slit_check', 'transmission',
+           'transmission_SM', 'contrast_change', 'inject', 'go_to_area', 'go_to_pressure']
 

@@ -18,6 +18,9 @@ from .sample import Sample, SampleGenerator
 from .NR_motion import _Movement
 from .instrument_constants import get_instrument_constants
 
+blocks = g.get_blocks()  # TODO: Need a way to check is blocks are available in config before running.
+print(blocks)
+
 
 class DryRun:
     dry_run = False
@@ -38,7 +41,9 @@ class DryRun:
             ETA = newtime.strftime("%H:%M")
             hours = str(int(DryRun.run_time / 60)).zfill(2)
             minutes = str(int(DryRun.run_time % 60)).zfill(2)
-            tit = args[0].title if isinstance(args[0], Sample) else ""
+
+            tit = args[0].title if type(args[0]).__name__ == 'Sample' else ""
+
             if self.counter <= 1:
                 columns = ["No", "Action", "Title", "Parameters", "Elapsed time", "ETA"]
                 print(
@@ -418,7 +423,7 @@ class SEActions:
             wait: True wait for completion; False don't wait
             dry_run: True don't do anything just print what it will do; False otherwise
         """
-
+        valvepos = None
         if dry_run:
             if isinstance(sample, int):
                 valvepos = sample
@@ -433,7 +438,6 @@ class SEActions:
 
         else:
             if isinstance(sample, int):
-                print('Here')
                 valvepos = sample
                 print("** Contrast change for valve{} **".format(valvepos))
             elif isinstance(sample, Sample):
@@ -476,6 +480,7 @@ class SEActions:
     @staticmethod
     @DryRun
     def inject(sample, liquid, flow=1.0, volume=None, wait=False, dry_run=False):
+        valvepos = None
         if dry_run:
             if wait and volume:
                 return volume / flow, f"Line {sample.valve}, {liquid}, {volume}mL, {flow}mL/min"
@@ -490,6 +495,7 @@ class SEActions:
                 valvepos = sample.valve
                 print("** Contrast change for valve{} **".format(valvepos))
             else:
+                valvepos = None
                 print("Incorrect form for valve - must be specified as integer or pre-defined sample")
 
             if isinstance(liquid, list):
