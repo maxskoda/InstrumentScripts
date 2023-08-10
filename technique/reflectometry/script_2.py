@@ -1,33 +1,37 @@
 # ## This script was generated on 15/02/2022, at 16:55:10
 # ## with ScriptMaker (c) Maximilian Skoda 2020 
 # ## Enjoy and use at your own risk.
-from datetime import datetime
-# from script_actions import DryRun
-from sample import SampleGenerator
-# from contrast_change import *
-from technique.reflectometry import *
+import time
 
-# from technique.reflectometry import SampleGenerator, contrast_change, inject, go_to_pressure
-
+from technique.reflectometry import *  # __all__ defined in __init__.py
+import logging
 import sys
 import os
 
-# sys.path.insert(0, os.path.abspath(os.path.join(r"C:\\", "Instrument", "scripts")))
 try:
     # pylint: disable=import-error
     from genie_python import genie as g
 except ImportError:
     from technique.reflectometry.mocks import g
 
+# Remove all handlers associated with the root logger object.
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
 
-# from technique.reflectometry import SampleGenerator, run_angle, run_angle_new,  run_angle_SM_new,\
-# 									contrast_change, transmission, transmission_new, transmission_new_SM,\
-# 									run_angle_new_edit,  run_angle_SM_new_edit, transmission_new_edit, transmission_new_SM_edit
-
-# run_angle = ScriptActions.run_angle
+# Set up new logger
+logging.basicConfig(
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("example.log", mode="w"),
+    ],
+    level=logging.DEBUG,
+    format="%(asctime)s | %(levelname)s | %(message)s",     # %(name)s -
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def runscript(dry_run=False):
+
     sample_generator = SampleGenerator(
         translation=400.0,
         height2_offset=0.0,
@@ -79,21 +83,11 @@ def runscript(dry_run=False):
     run_angle(samp, 2.3, 30)
     contrast_change(samp, SMW, flow=1.0, volume=15, wait=True)
 
-    # samp=sample_1
-    # samp.subtitle="SMW"
-    # run_angle_new_edit(samp,0.7,20)
-    # run_angle_new_edit(samp,2.3,30)
-    # contrast_change(samp.valve,H2O,flow=2.0,volume=15)
-
-    # for samp in [sample_2, sample_3, sample_4]:
-    # samp.subtitle="D2O"
-    # run_angle_new_edit(samp,0.7,10)
-    # run_angle_new_edit(samp,2.3,30)
-    # contrast_change(samp.valve,H2O,flow=2.0,volume=15)
+    # time.sleep(30)
 
     for samp in [sample_1, sample_3, sample_4]:
         samp.subtitle = "H2O"
-        run_angle(samp, 0.7, 10)
+        run_angle(samp, 0.7, count_seconds=300)
         run_angle(samp, 2.3, 30)
         contrast_change(samp, D2O, flow=1.0, volume=15)
 
@@ -101,6 +95,8 @@ def runscript(dry_run=False):
     transmission(sample_3, "Si3-unmarked", at_angle=0.7, count_uamps=20, hgaps={'S1HG': 50, 'S2HG': 30})
 
     go_to_pressure(28, speed=30)
+
+    inject(sample_4, D2O, flow=2.0, volume=20)
 
     if dry_run:
         print("\n=== Total time: ", str(int(DryRun.run_time / 60)) + "h " + str(int(DryRun.run_time % 60)) + "min ===")

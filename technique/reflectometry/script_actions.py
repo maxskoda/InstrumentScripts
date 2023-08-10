@@ -4,7 +4,9 @@ from contextlib2 import contextmanager
 from datetime import datetime
 from future.moves import itertools
 from math import tan, radians, sin, fabs
-
+from termcolor import colored
+import os
+import logging
 from six.moves import input
 
 try:
@@ -18,8 +20,30 @@ from sample import Sample, SampleGenerator
 from NR_motion import _Movement
 from instrument_constants import get_instrument_constants
 
+os.system('color')
+
 blocks = g.get_blocks()  # TODO: Need a way to check if blocks are available in config before running.
 print(blocks)
+
+# Define MESSAGE log level
+RUN = 11
+RUN_SM = 12
+TRANS = 13
+TRANS_SM = 14
+CONTRASTCHANGE = 15
+INJECT = 16
+GO_TO_PRESSURE = 17
+GO_TO_AREA = 18
+
+# "Register" new logging level
+logging.addLevelName(RUN, 'RUN')
+logging.addLevelName(RUN_SM, 'RUN_SM')
+logging.addLevelName(TRANS, 'TRANS')
+logging.addLevelName(TRANS_SM, 'TRANS_SM')
+logging.addLevelName(CONTRASTCHANGE, 'CONTRASTCHANGE')
+logging.addLevelName(INJECT, 'INJECT')
+logging.addLevelName(GO_TO_PRESSURE, 'GO_TO_PRESSURE')
+logging.addLevelName(GO_TO_AREA, 'GO_TO_AREA')
 
 
 class DryRun:
@@ -54,7 +78,7 @@ class DryRun:
                 #       self.f.__name__, tit, args[1:], "-->|", hours + ":" + minutes, " hh:mm")
                 arg = str(args[1:])
                 print(f"{DryRun.counter:02}| {str(self.f.__name__)[:15]:17} "
-                      f"|{tit[:43]:45} | {summary:39} -->| {hours:2}:{minutes:2}  hh:mm | {ETA}")
+                      f"| {tit[:43]:45} | {summary:39} -->| {hours:2}:{minutes:2}  hh:mm | {ETA}")
             else:
                 pars = ''
                 arglist = ''
@@ -69,7 +93,7 @@ class DryRun:
 
                 # print(f'{DryRun.counter:02}', "Dry run: ",
                 #       self.f.__name__, kwargs, "-->|", hours + ":" + minutes, "hh:mm")
-                print(f"{DryRun.counter:02}| {str(self.f.__name__)[:15]:17} |{arglist[:43]:45} | {pars:39} "
+                print(f"{DryRun.counter:02}| {str(self.f.__name__)[:15]:17} | {arglist[:43]:45} | {pars:39} "
                       f"-->| {hours:2}:{minutes:2}  hh:mm | {ETA}")
 
         else:
@@ -132,7 +156,7 @@ class RunActions:
             elif count_frames:
                 return count_frames / 36000, f"({angle}, {count_frames} frames)"
         else:
-            print("** Run angle {} **".format(sample.title))
+            # print(colored("** Run angle {} **".format(sample.title), 'white', 'on_blue'))
 
             movement = _Movement(dry_run)
 
@@ -144,13 +168,20 @@ class RunActions:
             movement.set_axis_dict(hgaps)
             movement.set_slit_vgaps(angle, constants, vgaps, sample)
             movement.wait_for_move()
-            movement.update_title(sample.title, sample.subtitle, angle, add_current_gaps=include_gaps_in_title)
+            new_title = movement.update_title(sample.title, sample.subtitle, angle,
+                                              add_current_gaps=include_gaps_in_title)
+
+            dur_dict = {'uamps': count_uamps, 'sec': count_seconds, 'frames': count_frames}
+            duration = [[dur_dict[dur], dur] for dur in dur_dict if dur_dict[dur] is not None][0]
+            logging.log(RUN, "{} | ** {}, th={}, {}={} **".
+                        format(str(g.get_runnumber()), sample.title, angle, duration[1], duration[0]))
+            # TODO use 'coloredlogs' library
 
             movement.start_measurement(count_uamps, count_seconds, count_frames, osc_slit, osc_block, osc_gap, vgaps,
                                        hgaps)
 
     @staticmethod
-    @DryRun
+    @DryRun  # TODO: remove b.KEYENCE, SM2, "HEIGHT"
     def run_angle_SM(sample, angle, count_uamps=None, count_seconds=None, count_frames=None, vgaps: dict = None,
                      hgaps: dict = None, smangle=0.0, mode=None, do_auto_height=False, laser_offset_block="b.KEYENCE",
                      fine_height_block="HEIGHT", auto_height_target=0.0, continue_on_error=False, dry_run=False,
@@ -213,7 +244,7 @@ class RunActions:
             elif count_frames:
                 return count_frames / 36000, f"({angle}, {count_frames} frames)"
         else:
-            print("** Run angle {} **".format(sample.title))
+            # print(colored("** Run angle {} **".format(sample.title), 'white', 'on_blue'))
 
             movement = _Movement(dry_run)
 
@@ -221,7 +252,7 @@ class RunActions:
             smblock_out, smang_out = movement.sample_setup(sample, angle, constants, mode_out, smang=smangle,
                                                            smblock=smblock)
 
-            if do_auto_height:
+            if do_auto_height:  # TODO: remove KEYNCE and HEIGHT and make generic
                 movement.auto_height(laser_offset_block="KEYENCE", fine_height_block="HEIGHT",
                                      target=auto_height_target,
                                      continue_if_nan=continue_on_error, dry_run=dry_run)
@@ -232,8 +263,11 @@ class RunActions:
             movement.set_slit_vgaps(angle, constants, vgaps, sample)
             movement.wait_for_move()
 
-            movement.update_title(sample.title, sample.subtitle, angle, smang_out, smblock_out,
-                                  add_current_gaps=include_gaps_in_title)
+            new_title = movement.update_title(sample.title, sample.subtitle, angle, smang_out, smblock_out,
+                                              add_current_gaps=include_gaps_in_title)
+            logging.log(RUN_SM,
+                        "{} | ** {} th={} **".format(str(g.get_runnumber()), sample.title,
+                                                     angle))  # TODO use 'coloredlogs' library
 
             movement.start_measurement(count_uamps, count_seconds, count_frames, osc_slit, osc_block, osc_gap, vgaps,
                                        hgaps)
@@ -285,7 +319,7 @@ class RunActions:
             elif count_frames:
                 return count_frames / 36000, f"({sample.title},{count_frames} frames)"
         else:
-            print("** Transmission {} **".format(title))
+            # print(colored("** Transmission {} **".format(title), 'light_red', attrs=['bold']))
 
             movement = _Movement(dry_run)
             constants, mode_out = movement.setup_measurement(mode)
@@ -305,7 +339,12 @@ class RunActions:
                 # Edit for this to be an instrument default for the angle to be used in calc when vg not defined.
                 movement.wait_for_move()
 
-                movement.update_title(title, "", None, add_current_gaps=include_gaps_in_title)
+                new_title = movement.update_title(title, "", None, add_current_gaps=include_gaps_in_title)
+
+                logging.log(TRANS,
+                            "{} | ** {} **".format(str(g.get_runnumber()),
+                                                   sample.title))  # TODO use 'coloredlogs' library
+
                 movement.start_measurement(count_uamps, count_seconds, count_frames, osc_slit, osc_block, osc_gap,
                                            vgaps,
                                            hgaps)
@@ -375,7 +414,7 @@ class RunActions:
             elif count_frames:
                 return count_frames / 36000, f"({sample.title},{count_frames} frames)"
         else:
-            print("** Transmission {} **".format(title))
+            # print(colored("** Transmission {} **".format(title), 'light_red', attrs=['bold']))
 
             movement = _Movement(dry_run)
             constants, mode_out = movement.setup_measurement(mode)
@@ -396,17 +435,16 @@ class RunActions:
                 # Edit for this to be an instrument default for the angle to be used in calc when vg not defined.
                 movement.wait_for_move()
 
-                movement.update_title(title, "", None, smang_out, smblock_out, add_current_gaps=include_gaps_in_title)
+                new_title = movement.update_title(title, "", None, smang_out, smblock_out,
+                                                  add_current_gaps=include_gaps_in_title)
+
+                logging.log(TRANS_SM,
+                            "{} | ** {} **".format(str(g.get_runnumber()),
+                                                   sample.title))  # TODO use 'coloredlogs' library
+
                 movement.start_measurement(count_uamps, count_seconds, count_frames, osc_slit, osc_block, osc_gap,
                                            vgaps, hgaps)
 
-
-# This means they can be typed directly into the IBEX python console:
-# _runaction_instance = RunActions()
-# run_angle = _runaction_instance.run_angle
-# run_angle_SM = _runaction_instance.run_angle_SM
-# transmission = _runaction_instance.transmission
-# transmission_SM = _runaction_instance.transmission_SM
 
 class SEActions:
     @staticmethod
@@ -451,11 +489,10 @@ class SEActions:
             sum_of_concentrations = sum(concentrations)
             if fabs(100 - sum_of_concentrations) > 0.01:
                 print("Concentrations don't add up to 100%! {} = {}".format(concentrations, sum_of_concentrations))
-            waiting = "" if wait else "NOT "
+            waiting = "" if wait else "NO "
 
-            print(
-                "Concentration: Valve {}, concentrations {}, flow {},  volume {}, time {}, and {}waiting for completion"
-                .format(valvepos, concentrations, flow, volume, seconds, waiting))
+            # print( "Concentration: Valve {}, concentrations {}, flow {},  volume {}, time {}, and {}waiting for
+            # completion" .format(valvepos, concentrations, flow, volume, seconds, waiting) )
 
             g.cset("knauer", valvepos)
             g.cset("Component_A", concentrations[0])
@@ -473,6 +510,11 @@ class SEActions:
                 print("Error concentration not set neither volume or time set!")
                 return
             g.waitfor_block("pump_is_on", "IDLE")
+
+            logging.log(CONTRASTCHANGE,
+                        "Valve {}, concentrations {}, flow {},  volume {}, time {}, and {}wait "
+                        .format(valvepos, concentrations, flow, volume, seconds,
+                                waiting))  # TODO use 'coloredlogs' library
 
             if wait:
                 g.waitfor_block("pump_is_on", "OFF")
@@ -518,6 +560,11 @@ class SEActions:
                 g.cset("Syringe_rate", flow)
                 g.cset("Syringe_start", 1)
 
+                waiting = "" if wait else "NO "
+                logging.log(INJECT,
+                            " {} valve {}, flow {},  volume {}, time {}, and {}wait"
+                            .format(liquid, valvepos, flow, volume, wait))  # TODO use 'coloredlogs' library
+
                 if wait:
                     g.waitfor_time(inject_time + 2)
             else:
@@ -542,7 +589,9 @@ class SEActions:
             return 30, f"Target pressure {pressure}, hold={hold}, wait={wait}. Time only estimate."
 
         else:
-            print("** NIMA trough going to pressure = {} mN/m. Barrier speed = {} cm/min **".format(pressure, speed))
+            print(colored(
+                "** NIMA trough going to pressure = {} mN/m. Barrier speed = {} cm/min **".format(pressure, speed),
+                'green'))
             movement = _Movement(dry_run)
             movement.dry_run_warning()
 
@@ -571,7 +620,7 @@ class SEActions:
             dry_run: True don't do anything just print what it will do; False otherwise
             maxwait: Maximum wait time for reaching requested value in seconds. Use None to be endless. Default 1hr.
         """
-        if dry_run:
+        if dry_run:  # TODO: we could interrogate the current area, subtract from target area and divide by speed
             return 10, f"Target area {area}, barrier speed {speed}, wait={wait}. Time only estimate."
 
         else:

@@ -8,6 +8,8 @@ from math import tan, radians, sin
 
 from six.moves import input
 
+import logging
+
 try:
     # pylint: disable=import-error
     from genie_python import genie as g
@@ -59,9 +61,10 @@ class _Movement(object):
         """
         special_axes = ['HEIGHT2']  # TODO: This could link to an instrument specific function?
         if axis.upper() in special_axes and not constants.has_height2:
-            print(colored("ERROR: Height 2 off set is being ignored", "red"))
+            # print(colored("ERROR: Height 2 offset is being ignored", "red"))
+            logging.error("Height 2 offset is being ignored")
         else:
-            print(colored("{} set to: {}".format(axis, value), "blue"))
+            print(colored("{} set to: {}".format(axis, value), "green"))
             if not self.dry_run:
                 try:
                     g.cset(axis, value)
@@ -138,6 +141,7 @@ class _Movement(object):
             print("New Title: {}".format(new_title))
         else:
             g.change_title(new_title)
+        return new_title
 
     def set_slit_vgaps(self, theta: float, constants, vgaps: dict, sample):
         """
@@ -325,7 +329,7 @@ class _Movement(object):
         :param count_frames: number of frames to count for; None count in a different way
         """
         if count_uamps is not None:
-            print("Wait for {} uA".format(count_uamps))
+            print(colored("Wait for {} uA".format(count_uamps), 'cyan', attrs=["bold"]))
             if not self.dry_run:
                 g.begin()
                 g.waitfor_uamps(count_uamps)
@@ -786,7 +790,8 @@ class _Movement_copy(object):
         """
         special_axes = ['HEIGHT2']  # This could link to an instrument specific function?
         if axis.upper() in special_axes and not constants.has_height2:
-            print("ERROR: Height 2 off set is being ignored")
+            # print("ERROR: Height 2 off set is being ignored")
+            logging.error("ERROR: Height 2 off set is being ignored")
         else:
             print("{} set to: {}".format(axis, value))
             if not self.dry_run:
