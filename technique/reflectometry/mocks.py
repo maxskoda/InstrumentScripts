@@ -85,6 +85,7 @@ g.get_pv = get_pv
 
 def cget(block):
     """Fake cget for the fake genie_python"""
+
     if block in instrument:
         return {"value": instrument[block]}
     return None

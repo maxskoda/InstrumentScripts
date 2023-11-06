@@ -59,19 +59,18 @@ class DryRun:
             DryRun.counter += 1
             kwargs['dry_run'] = True
             rt, summary = self.f(*args, **kwargs)
-
             DryRun.run_time += rt
             newtime = datetime.now() + timedelta(minutes=DryRun.run_time)
             ETA = newtime.strftime("%H:%M")
             hours = str(int(DryRun.run_time / 60)).zfill(2)
             minutes = str(int(DryRun.run_time % 60)).zfill(2)
 
-            tit = args[0].title if isinstance(args[0], Sample) else ""
+            tit = (args[0].title + " " + args[0].subtitle) if isinstance(args[0], Sample) else ""
 
             if self.counter <= 1:
                 columns = ["No", "Action", "Title", "Parameters", "Elapsed time", "ETA"]
                 print(
-                    f"{columns[0]:^2}|{columns[1]:^19}|{columns[2]:^46}|{columns[3]:^44}|{columns[4]:^14}|{columns[5]:^7}")
+                    f"{columns[0]:^2}|{columns[1]:^19}|{columns[2]:^47}|{columns[3]:^44}|{columns[4]:^14}|{columns[5]:^7}")
                 now = datetime.now()
             if tit != "":
                 # print(f'{DryRun.counter:02}', "Dry run: ",
@@ -400,7 +399,7 @@ class RunActions:
 
             A more complicated example:
             >>> transmission(my_sample, "My Title", 0.1, 0.2, 0.3, 0.4, count_frames=1,
-            >>>              s1hg=20, s2hg=20, s3hg=20, s4hg=20, smangle=0.1, mode="PNR", dry_run=True)
+            >>>              s1hg=20, s2hg=20, s3hg=20, s4hg=20, smangle=0.1, mode="PNR")
             Dry_run is true here so nothing will actually happen, but the effects will be printed to the screen. If
             dry_run had not been set then the vertical gaps would be set to 0.1, 0.2, 0.3 and 0.4, the horizontal gaps
             would be all set to 20. The super mirror would be moved into the beam and set to the angle 0.1. The mode will
@@ -449,7 +448,7 @@ class RunActions:
 class SEActions:
     @staticmethod
     @DryRun
-    def contrast_change(sample, concentrations, flow=1, volume=None, seconds=None, wait=False, dry_run=False):
+    def contrast_change(sample, concentrations, flow=1, volume=None, seconds=None, wait=False, dry_run: bool = False):
         """
         Perform a contrast change.
         Args:
@@ -605,9 +604,15 @@ class SEActions:
             g.waitfor_block("Target_reached", "NO")
             if wait:
                 g.waitfor_block("Target_reached", "YES", maxwait=maxwait)  # not sure what
+                logging.log(GO_TO_PRESSURE,
+                            " Target={} mN at {} cm^2/min and HOLD"
+                            .format(pressure, speed))  # TODO use 'coloredlogs' library
 
             if not hold:
                 g.cset("Speed", 0.0)  # set speed to 0 to stop barriers moving; pressure may change
+                logging.log(GO_TO_PRESSURE,
+                            " Target={} mN at {} cm^2/min, HOLD OFF"
+                            .format(pressure, speed))  # TODO use 'coloredlogs' library
 
     @staticmethod
     @DryRun
