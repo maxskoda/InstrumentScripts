@@ -52,7 +52,7 @@ def get_instrument_constants():
         sample_z = get_reflectometry_value("SAMPLE_Z")
         s3_z = get_reflectometry_value("S3_Z")
         s4_z = get_reflectometry_value("S4_Z")
-        pd_z = get_reflectometry_value("PD_Z")
+        # pd_z = get_reflectometry_value("PD_Z")
         s3_max = get_reflectometry_value("S3_MAX")
         s4_max = get_reflectometry_value("S4_MAX")
         max_theta = get_reflectometry_value("MAX_THETA")

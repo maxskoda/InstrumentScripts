@@ -22,8 +22,8 @@ from instrument_constants import get_instrument_constants
 
 os.system('color')
 
-blocks = g.get_blocks()  # TODO: Need a way to check if blocks are available in config before running.
-print(blocks)
+current_blocks = g.get_blocks()  # TODO: Need a way to check if blocks are available in config before running.
+print(current_blocks)
 
 # Define MESSAGE log level
 RUN = 11
@@ -58,7 +58,7 @@ class DryRun:
         if self.__class__.dry_run:
             DryRun.counter += 1
             kwargs['dry_run'] = True
-            rt, summary = self.f(*args, **kwargs)
+            rt, summary = self.f(*args, **kwargs) # TODO add 'blocks' as required blocks as return value
             DryRun.run_time += rt
             newtime = datetime.now() + timedelta(minutes=DryRun.run_time)
             ETA = newtime.strftime("%H:%M")
@@ -147,9 +147,9 @@ class RunActions:
             be used for the run to the screen.
         """
 
-        if dry_run:
+        if dry_run: # needs to return time, summary string and blocks required
             if count_uamps:
-                return count_uamps / 40 * 60, f"({angle}, {count_uamps} uAmps)"  # value for TS2, needs instrument check
+                return count_uamps / 40 * 60, f"({angle}, {count_uamps} uAmps)"  # TODO:  value for TS2, needs instrument check
             elif count_seconds:
                 return count_seconds / 60, f"({angle}, {count_seconds} s)"
             elif count_frames:
@@ -525,8 +525,12 @@ class SEActions:
         if dry_run:
             if wait and volume:
                 return volume / flow, f"Line {sample.valve}, {liquid}, {volume}mL, {flow}mL/min"
+                       # ['KNAUER2', 'KNAUER', 'Syringe_ID', 'Syringe_volume', 'Syringe_rate', 'Syringe_start', \
+                       #  'Component_A', 'Component_B', 'Component_C', 'Component_D']
             else:
                 return 0, f"Line {sample.valve}, {liquid}, {volume}mL, {flow}mL/min"
+                       # ['KNAUER2', 'KNAUER', 'Syringe_ID', 'Syringe_volume', 'Syringe_rate', 'Syringe_start', \
+                       #  'Component_A', 'Component_B', 'Component_C', 'Component_D']
 
         else:
             if isinstance(sample, int):
